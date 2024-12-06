@@ -1,15 +1,14 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { BrowserRouter as Router, Routes, Route, Link, useNavigate } from "react-router-dom";
-import './styles.css'; 
 
-const baseURL = "http://localhost:5001"; 
+const baseURL = "http://localhost:5001"; // Backend API URL
 
 function App() {
   return (
     <Router>
       <div>
-        <h1>X App</h1>
+        <h1>Tweet Sharing App</h1>
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<Login />} />
@@ -21,6 +20,7 @@ function App() {
   );
 }
 
+// Home Page
 function Home() {
   return (
     <div>
@@ -31,6 +31,7 @@ function Home() {
   );
 }
 
+// Login Page
 function Login() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -40,15 +41,15 @@ function Login() {
     e.preventDefault();
     try {
       const response = await axios.post(`${baseURL}/login`, { username, password });
-      localStorage.setItem("token", response.data.token);
+      localStorage.setItem("token", response.data.token); // Store token
       navigate("/dashboard");
     } catch (err) {
-      alert("Login failed: " + err.response.data.message);
+      alert("Login failed!");
     }
   };
 
   return (
-    <div className="form-container">
+    <div>
       <h2>Login</h2>
       <form onSubmit={handleLogin}>
         <input
@@ -65,10 +66,12 @@ function Login() {
         />
         <button type="submit">Login</button>
       </form>
+      <Link to="/register">Don't have an account? Register</Link>
     </div>
   );
 }
 
+// Register Page
 function Register() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -78,18 +81,15 @@ function Register() {
     e.preventDefault();
     try {
       await axios.post(`${baseURL}/register`, { username, password });
+      alert("Registration successful! Please login.");
       navigate("/login");
     } catch (err) {
-      if (err.response) {
-        alert("Registration failed: " + err.response.data.message);
-      } else {
-        alert("An error occurred. Please try again.");
-      }
+      alert("Registration failed!");
     }
   };
 
   return (
-    <div className="form-container">
+    <div>
       <h2>Register</h2>
       <form onSubmit={handleRegister}>
         <input
@@ -106,13 +106,17 @@ function Register() {
         />
         <button type="submit">Register</button>
       </form>
+      <Link to="/login">Already have an account? Login</Link>
     </div>
   );
 }
 
+// Dashboard
 function Dashboard() {
   const [tweets, setTweets] = useState([]);
   const [content, setContent] = useState("");
+  const [editContent, setEditContent] = useState("");
+  const [editingTweetId, setEditingTweetId] = useState(null);
   const authToken = localStorage.getItem("token");
   const navigate = useNavigate();
 
@@ -130,45 +134,82 @@ function Dashboard() {
   const handleTweetSubmit = async (e) => {
     e.preventDefault();
     try {
-      await axios.post(
+      const response = await axios.post(
         `${baseURL}/tweets`,
         { content },
         { headers: { Authorization: `Bearer ${authToken}` } }
       );
-      setContent("");
-      setTweets([...tweets, { content, username: "Your username" }]); 
+      setTweets([response.data, ...tweets]); // Add new tweet to the top
+      setContent(""); // Clear input
     } catch (err) {
       alert("Error posting tweet");
     }
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    navigate("/login");
+  const handleEditTweet = async (tweetId) => {
+    try {
+      const response = await axios.put(
+        `${baseURL}/tweets/${tweetId}`,
+        { content: editContent },
+        { headers: { Authorization: `Bearer ${authToken}` } }
+      );
+      setTweets(
+        tweets.map((tweet) =>
+          tweet._id === tweetId ? { ...tweet, content: response.data.content } : tweet
+        )
+      );
+      setEditingTweetId(null); // Reset editing state
+      setEditContent(""); // Clear edit content
+    } catch (err) {
+      alert("Error updating tweet");
+    }
+  };
+
+  const handleDeleteTweet = async (tweetId) => {
+    try {
+      await axios.delete(`${baseURL}/tweets/${tweetId}`, {
+        headers: { Authorization: `Bearer ${authToken}` },
+      });
+      setTweets(tweets.filter((tweet) => tweet._id !== tweetId)); // Remove tweet from UI
+    } catch (err) {
+      alert("Error deleting tweet");
+    }
   };
 
   return (
     <div>
-      <button className="logout-button" onClick={handleLogout}>Logout</button>
-      <div className="tweet-container">
-        <h2>Dashboard</h2>
-        <form onSubmit={handleTweetSubmit}>
-          <input
-            type="text"
-            placeholder="What's on your mind?"
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
-          />
-          <button type="submit">Tweet</button>
-        </form>
-        <div>
-          {tweets.map((tweet) => (
-            <div key={tweet._id} className="tweet">
-              <p>{tweet.content}</p>
-              <small>{tweet.username}</small>
-            </div>
-          ))}
-        </div>
+      <h2>Dashboard</h2>
+      <form onSubmit={handleTweetSubmit}>
+        <textarea
+          placeholder="What's happening?"
+          value={content}
+          onChange={(e) => setContent(e.target.value)}
+        />
+        <button type="submit">Post Tweet</button>
+      </form>
+
+      <div>
+        {tweets.map((tweet) => (
+          <div key={tweet._id}>
+            <p>{tweet.content}</p>
+            {tweet.userId === authToken.userId && (
+              <>
+                <button onClick={() => setEditingTweetId(tweet._id)}>Edit</button>
+                <button onClick={() => handleDeleteTweet(tweet._id)}>Delete</button>
+              </>
+            )}
+            {editingTweetId === tweet._id && (
+              <div>
+                <textarea
+                  value={editContent}
+                  onChange={(e) => setEditContent(e.target.value)}
+                />
+                <button onClick={() => handleEditTweet(tweet._id)}>Save</button>
+                <button onClick={() => setEditingTweetId(null)}>Cancel</button>
+              </div>
+            )}
+          </div>
+        ))}
       </div>
     </div>
   );

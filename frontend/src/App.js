@@ -1,157 +1,177 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
+import { BrowserRouter as Router, Routes, Route, Link, useNavigate } from "react-router-dom";
+import './styles.css'; // Import the CSS file
+
+const baseURL = "http://localhost:5001"; // Backend API
 
 function App() {
+  return (
+    <Router>
+      <div>
+        <h1>X App</h1>
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="/dashboard" element={<Dashboard />} />
+        </Routes>
+      </div>
+    </Router>
+  );
+}
+
+function Home() {
+  return (
+    <div>
+      <Link to="/login">Login</Link>
+      <br />
+      <Link to="/register">Register</Link>
+    </div>
+  );
+}
+
+function Login() {
   const [username, setUsername] = useState("");
-  const [content, setContent] = useState("");
-  const [tweets, setTweets] = useState([]);
+  const [password, setPassword] = useState("");
+  const navigate = useNavigate();
 
-  const baseURL = "http://localhost:5001"; 
-
- 
-  useEffect(() => {
-    axios.get(`${baseURL}/tweets`).then((response) => setTweets(response.data));
-  }, []);
-
-  
-  const handleTweetSubmit = async (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
-    const newTweet = { username, content };
-    await axios.post(`${baseURL}/tweets`, newTweet);
-    setTweets([...tweets, newTweet]); 
-    setContent(""); 
-  };
-
-  
-  const handleDeleteTweet = async (tweetId) => {
     try {
-      await axios.delete(`${baseURL}/tweets/${tweetId}`); 
-      setTweets(tweets.filter((tweet) => tweet._id !== tweetId)); 
-    } catch (error) {
-      console.error("Error deleting tweet:", error);
+      const response = await axios.post(`${baseURL}/login`, { username, password });
+      localStorage.setItem("token", response.data.token);
+      navigate("/dashboard");
+    } catch (err) {
+      alert("Login failed: " + err.response.data.message);
     }
   };
 
   return (
-    <div style={styles.container}>
-      <h1 style={styles.header}>OneCodeCamp App</h1>
-
-     
-      <form onSubmit={handleTweetSubmit} style={styles.form}>
+    <div className="form-container">
+      <h2>Login</h2>
+      <form onSubmit={handleLogin}>
         <input
           type="text"
           placeholder="Username"
           value={username}
           onChange={(e) => setUsername(e.target.value)}
-          style={styles.input}
         />
         <input
-          type="text"
-          placeholder="What's happening?"
-          value={content}
-          onChange={(e) => setContent(e.target.value)}
-          style={styles.input}
+          type="password"
+          placeholder="Password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
         />
-        <button type="submit" style={styles.button}>
-          Tweet
-        </button>
+        <button type="submit">Login</button>
       </form>
-
-      <h2 style={styles.dashboardHeader}>Dashboard</h2>
-
-      
-      {tweets.length > 0 ? (
-        tweets.map((tweet, index) => (
-          <div key={index} style={styles.tweetCard}>
-            <p style={styles.tweetContent}>
-              <b>{tweet.username}:</b> {tweet.content}
-            </p>
-            <button
-              onClick={() => handleDeleteTweet(tweet._id)}
-              style={styles.deleteButton}
-            >
-              Delete
-            </button>
-          </div>
-        ))
-      ) : (
-        <p style={styles.noTweetsMessage}>No tweets yet. Start tweeting!</p>
-      )}
     </div>
   );
 }
 
+function Register() {
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const navigate = useNavigate();
 
-const styles = {
-  container: {
-    padding: "20px",
-    fontFamily: "Arial, sans-serif",
-    backgroundColor: "#f4f4f9",
-    minHeight: "100vh",
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  header: {
-    color: "#333",
-    fontSize: "2rem",
-  },
-  form: {
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    marginBottom: "20px",
-  },
-  input: {
-    padding: "10px",
-    margin: "10px",
-    width: "300px",
-    fontSize: "1rem",
-    border: "1px solid #ccc",
-    borderRadius: "5px",
-    backgroundColor: "#fff",
-  },
-  button: {
-    padding: "10px 20px",
-    fontSize: "1rem",
-    color: "#fff",
-    backgroundColor: "#007bff",
-    border: "none",
-    borderRadius: "5px",
-    cursor: "pointer",
-  },
-  dashboardHeader: {
-    color: "#333",
-    fontSize: "1.5rem",
-    marginTop: "20px",
-  },
-  tweetCard: {
-    backgroundColor: "#fff",
-    padding: "15px",
-    borderRadius: "10px",
-    boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
-    marginBottom: "10px",
-    width: "80%",
-    maxWidth: "600px",
-  },
-  tweetContent: {
-    fontSize: "1rem",
-    color: "#333",
-  },
-  deleteButton: {
-    marginTop: "10px",
-    padding: "5px 10px",
-    fontSize: "0.9rem",
-    color: "#fff",
-    backgroundColor: "#e74c3c",
-    border: "none",
-    borderRadius: "5px",
-    cursor: "pointer",
-  },
-  noTweetsMessage: {
-    color: "#888",
-  },
-};
+  const handleRegister = async (e) => {
+    e.preventDefault();
+    try {
+      await axios.post(`${baseURL}/register`, { username, password });
+      navigate("/login");
+    } catch (err) {
+      if (err.response) {
+        alert("Registration failed: " + err.response.data.message);
+      } else {
+        alert("An error occurred. Please try again.");
+      }
+    }
+  };
+
+  return (
+    <div className="form-container">
+      <h2>Register</h2>
+      <form onSubmit={handleRegister}>
+        <input
+          type="text"
+          placeholder="Username"
+          value={username}
+          onChange={(e) => setUsername(e.target.value)}
+        />
+        <input
+          type="password"
+          placeholder="Password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+        />
+        <button type="submit">Register</button>
+      </form>
+    </div>
+  );
+}
+
+function Dashboard() {
+  const [tweets, setTweets] = useState([]);
+  const [content, setContent] = useState("");
+  const authToken = localStorage.getItem("token");
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!authToken) {
+      navigate("/login");
+    } else {
+      axios
+        .get(`${baseURL}/tweets`, { headers: { Authorization: `Bearer ${authToken}` } })
+        .then((response) => setTweets(response.data))
+        .catch((err) => alert("Error fetching tweets"));
+    }
+  }, [authToken, navigate]);
+
+  const handleTweetSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      await axios.post(
+        `${baseURL}/tweets`,
+        { content },
+        { headers: { Authorization: `Bearer ${authToken}` } }
+      );
+      setContent("");
+      setTweets([...tweets, { content, username: "Your username" }]); // Placeholder username
+    } catch (err) {
+      alert("Error posting tweet");
+    }
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    navigate("/login");
+  };
+
+  return (
+    <div>
+      <button className="logout-button" onClick={handleLogout}>Logout</button>
+      <div className="tweet-container">
+        <h2>Dashboard</h2>
+        <form onSubmit={handleTweetSubmit}>
+          <input
+            type="text"
+            placeholder="What's on your mind?"
+            value={content}
+            onChange={(e) => setContent(e.target.value)}
+          />
+          <button type="submit">Tweet</button>
+        </form>
+        <div>
+          {tweets.map((tweet) => (
+            <div key={tweet._id} className="tweet">
+              <p>{tweet.content}</p>
+              <small>{tweet.username}</small>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default App;

@@ -64,7 +64,7 @@ form button {
   width: 100%;
 }
 
-/* Container for the Tweets */
+
 .tweet-container {
   max-width: 600px;
   width: 100%;
@@ -103,7 +103,7 @@ form button {
   background-color: #c82333;
 }
 
-/* Home Page Styles */
+
 .home-container {
   display: flex;
   flex-direction: column;

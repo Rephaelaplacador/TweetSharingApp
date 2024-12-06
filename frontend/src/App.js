@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { BrowserRouter as Router, Routes, Route, Link, useNavigate } from "react-router-dom";
-import './styles.css'; // Import the CSS file
+import './styles.css'; 
 
-const baseURL = "http://localhost:5001"; // Backend API
+const baseURL = "http://localhost:5001"; 
 
 function App() {
   return (
@@ -136,7 +136,7 @@ function Dashboard() {
         { headers: { Authorization: `Bearer ${authToken}` } }
       );
       setContent("");
-      setTweets([...tweets, { content, username: "Your username" }]); // Placeholder username
+      setTweets([...tweets, { content, username: "Your username" }]); 
     } catch (err) {
       alert("Error posting tweet");
     }
